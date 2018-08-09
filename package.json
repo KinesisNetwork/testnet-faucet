@@ -4,7 +4,7 @@
   "description": "Faucet to recieve tesnet funds for Kinesis currencies",
   "main": "build/index.js",
   "scripts": {
-    "build:client": "parcel build src/client/index.html --out-file index.html",
+    "build:client": "parcel build src/client/index.html",
     "build:server": "tsc",
     "build": "concurrently \"npm:build:*\"",
     "watch:server": "tsc --watch",

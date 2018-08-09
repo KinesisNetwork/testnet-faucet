@@ -6,14 +6,15 @@ import { fundAccount } from './fundAccount'
 const rateLimiter: { [key: string]: Date } = {}
 const limit = 1000 * 60 * 60
 
-server({ port: 3000, public: 'dist', views: 'dist' }, [
-  get('/', _ => render('index.html')),
+server({ port: 3000, public: 'dist', views: 'dist', security: false }, [
+  get('/', _ctx => render('index.html')),
   get('/*', _ => redirect('/')),
-  post('/:address', ctx => handleFundRequest(ctx.params.id))
+  post('/fund/:address', ctx => handleFundRequest(ctx.params.id))
 ])
 
 async function handleFundRequest(address: string): Promise<Reply> {
   const requestTime = new Date()
+  await new Promise(res => setTimeout(res, 1000))
   if (isOverRateLimit(address, requestTime)) {
     return status(429).json({ limitEnd: rateLimiter[address] })
   }
