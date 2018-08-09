@@ -35,6 +35,7 @@
     "typescript": "^3.0.1"
   },
   "dependencies": {
+    "js-kinesis-sdk": "^0.9.7",
     "react": "^16.4.2",
     "react-dom": "^16.4.2",
     "server": "^1.0.18"
