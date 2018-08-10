@@ -12,7 +12,7 @@ const FUNDING_ACCOUNT_KEYPAIR = Keypair.fromSecret(
     'SAR4YMRBHLU7P7UNPEAOQGSS5P3G4PNALDE3CNOCFNLJC2PA6TS3K44H'
 )
 const FUNDABLE_AMOUNT = Number(process.env.FUNDABLE_AMOUNT) || 30 // lumens
-const AMOUNT_TO_STROOPS_FEE = 10e5 * 45
+const AMOUNT_TO_STROOPS_FEE = 10e2 * 45 // 0.45% * 10e7
 
 Network.use(new Network('Kinesis UAT'))
 
@@ -35,7 +35,7 @@ export default async function fundAccount(destination: string) {
     FUNDING_ACCOUNT_KEYPAIR.publicKey()
   )
   const transaction = new TransactionBuilder(fundingAccount, {
-    fee: String(FUNDABLE_AMOUNT * AMOUNT_TO_STROOPS_FEE)
+    fee: String(FUNDABLE_AMOUNT * AMOUNT_TO_STROOPS_FEE + 100)
   })
     .addOperation(operation)
     .build()
