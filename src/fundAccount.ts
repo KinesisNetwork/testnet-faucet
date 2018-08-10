@@ -3,16 +3,20 @@ import {
   Operation,
   Asset,
   TransactionBuilder,
-  Keypair
+  Keypair,
+  Network
 } from 'js-kinesis-sdk'
 
 const FUNDING_ACCOUNT_KEYPAIR = Keypair.fromSecret(
-  'SAR4YMRBHLU7P7UNPEAOQGSS5P3G4PNALDE3CNOCFNLJC2PA6TS3K44H'
+  process.env.FUNDING_ACCOUNT_SECRET ||
+    'SAR4YMRBHLU7P7UNPEAOQGSS5P3G4PNALDE3CNOCFNLJC2PA6TS3K44H'
 )
-const FUNDABLE_AMOUNT = 30 // lumens
+const FUNDABLE_AMOUNT = Number(process.env.FUNDABLE_AMOUNT) || 30 // lumens
 const AMOUNT_TO_STROOPS_FEE = 10e5 * 45
 
-export async function fundAccount(destination: string) {
+Network.use(new Network('Kinesis UAT'))
+
+export default async function fundAccount(destination: string) {
   const server = new Server('https://kau-testnet.kinesisgroup.io')
   const accountExists = await server
     .loadAccount(destination)

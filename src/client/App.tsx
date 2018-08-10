@@ -11,14 +11,14 @@ class App extends React.Component {
 
   render() {
     return (
-      <article className="hero is-fullheight is-primary is-bold">
+      <article className="hero is-fullheight is-dark is-bold">
         <div className="hero-head" />
         <div className="hero-body">
           <div className="container has-text-centered">
-            <h1 className="title">Fund Account</h1>
+            <h1 className="title">Fund KAU Testnet Account</h1>
             <form onSubmit={this.handleSubmit}>
               <div className="field has-addons has-addons-centered">
-                <div className="control">
+                <div className="control is-expanded">
                   <input
                     className={`input is-medium ${
                       this.state.error ? ' is-danger' : ''
@@ -29,7 +29,6 @@ class App extends React.Component {
                     disabled={this.state.pending || this.state.funded}
                     onChange={this.handleChange}
                   />
-                  <p className="help is-danger">{this.state.error}</p>
                 </div>
                 <div className="control">
                   <button
@@ -44,6 +43,9 @@ class App extends React.Component {
                 </div>
               </div>
             </form>
+            {this.state.error && (
+              <p className="subtitle has-text-danger">{this.state.error}</p>
+            )}
             {this.state.funded && (
               <div className="subtitle">You received 30 KAU</div>
             )}
@@ -60,7 +62,7 @@ class App extends React.Component {
 
   private handleSubmit: React.FormEventHandler = async ev => {
     ev.preventDefault()
-    this.setState({ pending: true })
+    this.setState({ pending: true, error: '' })
     const response = await fetch(`/fund/${this.state.address}`, {
       method: 'POST',
       credentials: 'include',
@@ -74,7 +76,7 @@ class App extends React.Component {
     } else if (response.status === 400) {
       this.setState({ error: 'Invalid address' })
     } else {
-      this.setState({ funded: response.ok })
+      this.setState({ funded: response.ok, error: '' })
     }
 
     this.setState({ pending: false })
