@@ -14,7 +14,6 @@ server({ port: 3000, public: 'dist', views: 'dist', security: false }, [
 
 async function handleFundRequest(address: string): Promise<Reply> {
   const requestTime = new Date()
-  await new Promise(res => setTimeout(res, 1000))
   if (isOverRateLimit(address, requestTime)) {
     return status(429).json({ limitEnd: rateLimiter[address] })
   }

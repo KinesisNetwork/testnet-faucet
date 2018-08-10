@@ -77,6 +77,7 @@ class App extends React.Component {
       this.setState({ error: 'Invalid address' })
     } else {
       this.setState({ funded: response.ok, error: '' })
+      setTimeout(() => this.setState({ funded: false }), 2000)
     }
 
     this.setState({ pending: false })
