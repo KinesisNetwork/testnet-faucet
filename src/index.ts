@@ -25,7 +25,7 @@ async function handleFundRequest(address: string): Promise<Reply> {
   }
 
   rateLimiter[address] = requestTime
-  return status(200)
+  return status(200).send({ fundedAmount: process.env.FUNDABLE_AMOUNT })
 }
 
 function isOverRateLimit(address: string, currentTime: Date): boolean {

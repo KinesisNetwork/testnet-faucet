@@ -4,7 +4,7 @@ import 'babel-polyfill'
 class App extends React.Component {
   state = {
     pending: false,
-    funded: false,
+    funded: 0,
     address: '',
     error: ''
   }
@@ -26,7 +26,7 @@ class App extends React.Component {
                     type="text"
                     placeholder="e.g. GBXY..."
                     value={this.state.address}
-                    disabled={this.state.pending || this.state.funded}
+                    disabled={this.state.pending || !!this.state.funded}
                     onChange={this.handleChange}
                   />
                 </div>
@@ -36,7 +36,7 @@ class App extends React.Component {
                       this.state.pending ? 'is-loading' : ''
                     }`}
                     type="submit"
-                    disabled={this.state.funded}
+                    disabled={!!this.state.funded}
                   >
                     Fund Account
                   </button>
@@ -46,8 +46,10 @@ class App extends React.Component {
             {this.state.error && (
               <p className="subtitle has-text-danger">{this.state.error}</p>
             )}
-            {this.state.funded && (
-              <div className="subtitle">You received 30 KAU</div>
+            {!!this.state.funded && (
+              <div className="subtitle">
+                You received {this.state.funded} KAU
+              </div>
             )}
           </div>
         </div>
@@ -76,8 +78,9 @@ class App extends React.Component {
     } else if (response.status === 400) {
       this.setState({ error: 'Invalid address' })
     } else {
-      this.setState({ funded: response.ok, error: '' })
-      setTimeout(() => this.setState({ funded: false }), 2000)
+      const res = await response.json()
+      this.setState({ funded: res.fundedAmount, error: '' })
+      setTimeout(() => this.setState({ funded: 0 }), 2000)
     }
 
     this.setState({ pending: false })
