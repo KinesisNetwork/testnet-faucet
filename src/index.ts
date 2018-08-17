@@ -1,7 +1,7 @@
 import server from 'server'
 import { status, render, redirect, Reply } from 'server/reply'
 import { get, post } from 'server/router'
-import fundAccount from './fundAccount'
+import fundAccount, { FUNDABLE_AMOUNT } from './fundAccount'
 
 const rateLimiter: { [key: string]: Date } = {}
 const limit = 1000 * 60 * 60 // 1 hour
@@ -24,13 +24,13 @@ async function handleFundRequest(address: string): Promise<Reply> {
     return status(400).send({ e })
   }
 
-  rateLimiter[address] = requestTime
-  return status(200).send({ fundedAmount: process.env.FUNDABLE_AMOUNT })
+  rateLimiter[address] = new Date(requestTime.valueOf() + limit)
+  return status(200).send({ fundedAmount: FUNDABLE_AMOUNT })
 }
 
 function isOverRateLimit(address: string, currentTime: Date): boolean {
   return (
     rateLimiter[address] &&
-    currentTime.valueOf() - rateLimiter[address].valueOf() < limit
+    currentTime.valueOf() - rateLimiter[address].valueOf() < 0
   )
 }

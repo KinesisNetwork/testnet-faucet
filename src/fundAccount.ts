@@ -11,7 +11,7 @@ const FUNDING_ACCOUNT_KEYPAIR = Keypair.fromSecret(
   process.env.FUNDING_ACCOUNT_SECRET ||
     'SAR4YMRBHLU7P7UNPEAOQGSS5P3G4PNALDE3CNOCFNLJC2PA6TS3K44H'
 )
-const FUNDABLE_AMOUNT = Number(process.env.FUNDABLE_AMOUNT) || 30 // lumens
+export const FUNDABLE_AMOUNT = Number(process.env.FUNDABLE_AMOUNT) || 30 // lumens
 const AMOUNT_TO_STROOPS_FEE = 10e2 * 45 // 0.45% * 10e7
 
 Network.use(new Network('Kinesis UAT'))

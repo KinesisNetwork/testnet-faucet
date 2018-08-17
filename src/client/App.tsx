@@ -73,7 +73,7 @@ class App extends React.Component {
     if (response.status === 429) {
       const errors = await response.json()
       this.setState({
-        error: `Requesting too much. Need to wait till ${errors.limitEnd}`
+        error: `Requesting too much. Need to wait till ${new Date(errors.limitEnd).toTimeString()}`
       })
     } else if (response.status === 400) {
       this.setState({ error: 'Invalid address' })
