@@ -4,12 +4,12 @@ files:
   - source: /
     destination: /home/ec2-user/testnet-faucet
 hooks:
-  - AfterInstall:
-      location: scripts/hook.AfterInstall.sh
+  AfterInstall:
+    - location: scripts/hook.AfterInstall.sh
       runas: ec2-user
-  - ApplicationStart:
-      location: scripts/hook.ApplicationStart.sh
+  ApplicationStart:
+    - location: scripts/hook.ApplicationStart.sh
       runas: ec2-user
-  - Applicationstop:
-      location: scripts/hook.ApplicationStop.sh
+  Applicationstop:
+    - location: scripts/hook.ApplicationStop.sh
       runas: ec2-user
