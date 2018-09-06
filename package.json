@@ -31,6 +31,7 @@
     "@types/react": "^16.4.8",
     "@types/react-dom": "^16.0.7",
     "@types/server": "^1.0.0",
+    "babel-polyfill": "^6.26.0",
     "concurrently": "^3.6.1",
     "parcel": "^1.9.7",
     "pm2": "^3.0.3",

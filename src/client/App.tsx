@@ -1,6 +1,6 @@
 import React from 'react'
-
 import { Connection, fetchConnections } from '../shared/connections'
+import icon from './images/icon.png'
 
 interface State {
   address: string
@@ -31,35 +31,42 @@ class App extends React.Component<{}, State> {
     const { address, connections, error, funded, pending, selectedConnection } = this.state
     
     return (
-      <article className="hero is-fullheight is-dark is-bold">
-        <div className="hero-head" />
+      <article className="hero is-fullheight">
+        <div className="hero-head">
+          <nav className="navbar ">
+            <div className="container">
+              <div className="navbar-brand">
+                <a className="navbar-item">
+                  <img src={icon} alt="Logo" style={{ filter: 'invert(100%)' }} />
+                </a>
+                <a className="navbar-item">
+                  Kinesis Testnet Faucet
+                </a>
+              </div>
+            </div>
+          </nav>
+        </div>
+
         <div className="hero-body">
           <div className="container has-text-centered">
-            <h1 className="title">Fund {selectedConnection.currency} Testnet Account</h1>
+            <h1 className="title">Fund Testnet Account</h1>
             <form onSubmit={this.handleSubmit}>
-              <div className="field">
-                <div className="control select has-icons-left is-info">
-                  <select
-                    className="input is-medium"
-                    name="currency"
-                    onChange={this.handleSelect}
-                  >
-                    <option disabled value=''>Select Currency</option>
-                    { connections.map(({ currency }) =>
-                      <option key={currency} value={currency}>
-                        {currency}
-                      </option>
-                    )}
-                  </select>
-                </div>
-              </div>
               <div className="field has-addons has-addons-centered">
+                <div className="control">
+                  <span className="select">
+                    <select className="input is-medium" name="currency" onChange={this.handleSelect}>
+                      {connections.map(({ currency }) =>
+                        <option key={currency} value={currency}>{currency}</option>
+                      )}
+                    </select>
+                  </span>
+                </div>
                 <div className="control is-expanded">
                   <input
                     className={`input is-medium ${ error ? 'is-danger' : '' }`}
                     type="text"
                     name="address"
-                    placeholder="e.g. GBXY..."
+                    placeholder="Public Key e.g. GBXY..."
                     value={address}
                     disabled={pending || !!funded}
                     onChange={this.handleChange}
@@ -75,15 +82,16 @@ class App extends React.Component<{}, State> {
                   </button>
                 </div>
               </div>
+              {!!error && <div className="subtitle has-text-danger">{error}</div> }
+              {!!funded && (
+                <div className="subtitle">
+                  You received {funded} {selectedConnection.currency}
+                </div>
+              )}
             </form>
-            {!!error && <p className="subtitle has-text-danger">{error}</p> }
-            {!!funded && (
-              <div className="subtitle">
-                You received {funded} {selectedConnection.currency}
-              </div>
-            )}
           </div>
         </div>
+ 
         <div className="hero-footer" />
       </article>
     )
@@ -118,13 +126,13 @@ class App extends React.Component<{}, State> {
     if (response.status === 429) {
       const errors = await response.json()
       this.setState({
-        error: `Requesting too much. Need to wait till ${new Date(errors.limitEnd).toTimeString()}`
+        error: `Request limit reached. Please wait until ${new Date(errors.limitEnd).toTimeString()}`
       })
     } else if (response.status === 400) {
       this.setState({ error: 'Invalid address' })
     } else {
-      const res = await response.json()
-      this.setState({ funded: res.fundedAmount, error: '' })
+      const { fundedAmount } = await response.json()
+      this.setState({ funded: fundedAmount, error: '' })
       setTimeout(() => this.setState({ funded: 0 }), 2000)
     }
 

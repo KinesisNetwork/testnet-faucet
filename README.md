@@ -14,4 +14,6 @@ Then to start the watchers to update the code building (TS and parcel) run
 
 `npm run watch`
 
+(Alternatively run the command `npm run dev` which does both of the above)
+
 The app will by default be running at `localhost:3000`
