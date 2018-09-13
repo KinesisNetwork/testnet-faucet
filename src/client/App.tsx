@@ -1,35 +1,31 @@
 import React from 'react'
-import { Connection, fetchConnections } from '../shared/connections'
 import icon from './images/icon.png'
+
+enum Currency {
+  kau = 'KAU',
+  kag = 'KAG'
+}
 
 interface State {
   address: string
-  connections: Connection[]
   error: string
   funded: number
   pending: boolean
-  selectedConnection: Connection
+  selectedCurrency: Currency
 }
 
 class App extends React.Component<{}, State> {
   state: State = {
     address: '',
-    connections: [],
     error: '',
     funded: 0,
     pending: false,
-    selectedConnection: {} as Connection,
-  }
-
-  async componentDidMount() {
-    const connections = await fetchConnections()
-
-    this.setState({ connections, selectedConnection: connections[0] })
+    selectedCurrency: Currency.kau
   }
 
   render() {
-    const { address, connections, error, funded, pending, selectedConnection } = this.state
-    
+    const { address, error, funded, pending, selectedCurrency } = this.state
+
     return (
       <article className="hero is-fullheight">
         <div className="hero-head">
@@ -37,11 +33,13 @@ class App extends React.Component<{}, State> {
             <div className="container">
               <div className="navbar-brand">
                 <a className="navbar-item">
-                  <img src={icon} alt="Logo" style={{ filter: 'invert(100%)' }} />
+                  <img
+                    src={icon}
+                    alt="Logo"
+                    style={{ filter: 'invert(100%)' }}
+                  />
                 </a>
-                <a className="navbar-item">
-                  Kinesis Testnet Faucet
-                </a>
+                <a className="navbar-item">Kinesis Testnet Faucet</a>
               </div>
             </div>
           </nav>
@@ -53,17 +51,16 @@ class App extends React.Component<{}, State> {
             <form onSubmit={this.handleSubmit}>
               <div className="field has-addons has-addons-centered">
                 <div className="control">
-                  <span className="select">
-                    <select className="input is-medium" name="currency" onChange={this.handleSelect}>
-                      {connections.map(({ currency }) =>
-                        <option key={currency} value={currency}>{currency}</option>
-                      )}
+                  <span className="select is-medium">
+                    <select name="currency" onChange={this.handleSelect}>
+                      <option value="KAU">KAU</option>
+                      <option value="KAG">KAG</option>
                     </select>
                   </span>
                 </div>
                 <div className="control is-expanded">
                   <input
-                    className={`input is-medium ${ error ? 'is-danger' : '' }`}
+                    className={`input is-medium ${error ? 'is-danger' : ''}`}
                     type="text"
                     name="address"
                     placeholder="Public Key e.g. GBXY..."
@@ -74,24 +71,28 @@ class App extends React.Component<{}, State> {
                 </div>
                 <div className="control">
                   <button
-                    className={`button is-success is-medium ${ pending ? 'is-loading' : '' }`}
+                    className={`button is-success is-medium ${
+                      pending ? 'is-loading' : ''
+                    }`}
                     type="submit"
-                    disabled={!!funded || !address }
+                    disabled={!!funded || !address}
                   >
                     Fund Account
                   </button>
                 </div>
               </div>
-              {!!error && <div className="subtitle has-text-danger">{error}</div> }
+              {!!error && (
+                <div className="subtitle has-text-danger">{error}</div>
+              )}
               {!!funded && (
                 <div className="subtitle">
-                  You received {funded} {selectedConnection.currency}
+                  You received {funded} {selectedCurrency}
                 </div>
               )}
             </form>
           </div>
         </div>
- 
+
         <div className="hero-footer" />
       </article>
     )
@@ -103,9 +104,7 @@ class App extends React.Component<{}, State> {
 
   private handleSelect: React.ChangeEventHandler<HTMLSelectElement> = ev => {
     const { value: currency } = ev.currentTarget
-    this.setState(({ connections }) => ({
-      selectedConnection: connections.find(conn => conn.currency === currency)
-    }))
+    this.setState({ selectedCurrency: currency as Currency })
   }
 
   private handleSubmit: React.FormEventHandler = async ev => {
@@ -113,20 +112,21 @@ class App extends React.Component<{}, State> {
 
     this.setState({ pending: true, error: '' })
 
-    const { address, selectedConnection } = this.state
+    const { address, selectedCurrency } = this.state
 
-    const response = await fetch(`/fund/${address}`, {
-      body: JSON.stringify(selectedConnection),
+    const response = await fetch(`/fund/${selectedCurrency}/${address}`, {
       credentials: 'include',
       headers: {
-        'csrf-token': (window as any).csrf,
+        'csrf-token': (window as any).csrf
       },
-      method: 'POST',
+      method: 'POST'
     })
     if (response.status === 429) {
       const errors = await response.json()
       this.setState({
-        error: `Request limit reached. Please wait until ${new Date(errors.limitEnd).toTimeString()}`
+        error: `Request limit reached. Please wait until ${new Date(
+          errors.limitEnd
+        ).toTimeString()}`
       })
     } else if (response.status === 400) {
       this.setState({ error: 'Invalid address' })
