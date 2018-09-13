@@ -11,7 +11,7 @@ const rateLimiter: {
     [key: string]: Date
   }
 } = {}
-const limit = 1000 * 60 * 60 // 1 hour
+const RATE_LIMIT_IN_MS = 1000 * 60 * 60 // 1 hour
 
 server({ port: 3000, public: 'dist', views: 'dist', security: false }, [
   get('/', _ => render('index.html')),
@@ -41,7 +41,7 @@ async function handleFundRequest(
 
   try {
     const fundedAmount = await fundAccount(address, currency)
-    const newLimit = new Date(requestTime.valueOf() + limit)
+    const newLimit = new Date(requestTime.valueOf() + RATE_LIMIT_IN_MS)
 
     if (rateLimiter[currency]) {
       rateLimiter[currency][address] = newLimit
