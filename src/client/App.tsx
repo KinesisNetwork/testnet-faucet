@@ -1,58 +1,98 @@
 import React from 'react'
-import 'babel-polyfill'
+import icon from './images/icon.png'
 
-class App extends React.Component {
-  state = {
-    pending: false,
-    funded: 0,
+enum Currency {
+  kau = 'KAU',
+  kag = 'KAG'
+}
+
+interface State {
+  address: string
+  error: string
+  funded: number
+  pending: boolean
+  selectedCurrency: Currency
+}
+
+class App extends React.Component<{}, State> {
+  state: State = {
     address: '',
-    error: ''
+    error: '',
+    funded: 0,
+    pending: false,
+    selectedCurrency: Currency.kau
   }
 
   render() {
+    const { address, error, funded, pending, selectedCurrency } = this.state
+
     return (
-      <article className="hero is-fullheight is-dark is-bold">
-        <div className="hero-head" />
+      <article className="hero is-fullheight">
+        <div className="hero-head">
+          <nav className="navbar ">
+            <div className="container">
+              <div className="navbar-brand">
+                <a className="navbar-item">
+                  <img
+                    src={icon}
+                    alt="Logo"
+                    style={{ filter: 'invert(100%)' }}
+                  />
+                </a>
+                <a className="navbar-item">Kinesis Testnet Faucet</a>
+              </div>
+            </div>
+          </nav>
+        </div>
+
         <div className="hero-body">
           <div className="container has-text-centered">
-            <h1 className="title">Fund KAU Testnet Account</h1>
+            <h1 className="title">Fund Testnet Account</h1>
             <form onSubmit={this.handleSubmit}>
               <div className="field has-addons has-addons-centered">
+                <div className="control">
+                  <span className="select is-medium">
+                    <select name="currency" onChange={this.handleSelect}>
+                      <option value="KAU">KAU</option>
+                      <option value="KAG">KAG</option>
+                    </select>
+                  </span>
+                </div>
                 <div className="control is-expanded">
                   <input
-                    className={`input is-medium ${
-                      this.state.error ? ' is-danger' : ''
-                    }`}
+                    className={`input is-medium ${error ? 'is-danger' : ''}`}
                     type="text"
-                    placeholder="e.g. GBXY..."
-                    value={this.state.address}
-                    disabled={this.state.pending || !!this.state.funded}
+                    name="address"
+                    placeholder="Public Key e.g. GBXY..."
+                    value={address}
+                    disabled={pending || !!funded}
                     onChange={this.handleChange}
                   />
                 </div>
                 <div className="control">
                   <button
                     className={`button is-success is-medium ${
-                      this.state.pending ? 'is-loading' : ''
+                      pending ? 'is-loading' : ''
                     }`}
                     type="submit"
-                    disabled={!!this.state.funded}
+                    disabled={!!funded || !address}
                   >
                     Fund Account
                   </button>
                 </div>
               </div>
+              {!!error && (
+                <div className="subtitle has-text-danger">{error}</div>
+              )}
+              {!!funded && (
+                <div className="subtitle">
+                  You received {funded} {selectedCurrency}
+                </div>
+              )}
             </form>
-            {this.state.error && (
-              <p className="subtitle has-text-danger">{this.state.error}</p>
-            )}
-            {!!this.state.funded && (
-              <div className="subtitle">
-                You received {this.state.funded} KAU
-              </div>
-            )}
           </div>
         </div>
+
         <div className="hero-footer" />
       </article>
     )
@@ -62,24 +102,37 @@ class App extends React.Component {
     this.setState({ address: ev.currentTarget.value })
   }
 
+  private handleSelect: React.ChangeEventHandler<HTMLSelectElement> = ev => {
+    const { value: currency } = ev.currentTarget
+    this.setState({ selectedCurrency: currency as Currency })
+  }
+
   private handleSubmit: React.FormEventHandler = async ev => {
     ev.preventDefault()
+
     this.setState({ pending: true, error: '' })
-    const response = await fetch(`/fund/${this.state.address}`, {
-      method: 'POST',
+
+    const { address, selectedCurrency } = this.state
+
+    const response = await fetch(`/fund/${selectedCurrency}/${address}`, {
       credentials: 'include',
-      headers: { 'csrf-token': (window as any).csrf }
+      headers: {
+        'csrf-token': (window as any).csrf
+      },
+      method: 'POST'
     })
     if (response.status === 429) {
       const errors = await response.json()
       this.setState({
-        error: `Requesting too much. Need to wait till ${new Date(errors.limitEnd).toTimeString()}`
+        error: `Request limit reached. Please wait until ${new Date(
+          errors.limitEnd
+        ).toTimeString()}`
       })
     } else if (response.status === 400) {
       this.setState({ error: 'Invalid address' })
     } else {
-      const res = await response.json()
-      this.setState({ funded: res.fundedAmount, error: '' })
+      const { fundedAmount } = await response.json()
+      this.setState({ funded: fundedAmount, error: '' })
       setTimeout(() => this.setState({ funded: 0 }), 2000)
     }
 

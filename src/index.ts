@@ -1,36 +1,70 @@
 import server from 'server'
 import { status, render, redirect, Reply } from 'server/reply'
 import { get, post } from 'server/router'
-import fundAccount, { FUNDABLE_AMOUNT } from './fundAccount'
 
-const rateLimiter: { [key: string]: Date } = {}
-const limit = 1000 * 60 * 60 // 1 hour
+import fundAccount from './fundAccount'
+
+export type Currency = 'KAU' | 'KAG'
+
+const rateLimiter: {
+  [currency: string]: {
+    [key: string]: Date
+  }
+} = {}
+const RATE_LIMIT_IN_MS = 1000 * 60 * 60 // 1 hour
 
 server({ port: 3000, public: 'dist', views: 'dist', security: false }, [
-  get('/', _ctx => render('index.html')),
+  get('/', _ => render('index.html')),
   get('/*', _ => redirect('/')),
-  post('/fund/:address', ctx => handleFundRequest(ctx.params.address))
+  post('/fund/:currency/:address', ctx => {
+    return handleFundRequest(ctx.params.address, ctx.params.currency)
+  })
 ])
 
-async function handleFundRequest(address: string): Promise<Reply> {
+function isCurrency(input: string): input is Currency {
+  return ['KAU', 'KAG'].includes(input)
+}
+
+async function handleFundRequest(
+  address: string,
+  currency: string
+): Promise<Reply> {
   const requestTime = new Date()
-  if (isOverRateLimit(address, requestTime)) {
-    return status(429).json({ limitEnd: rateLimiter[address] })
+
+  if (!isCurrency(currency)) {
+    return status(404)
+  }
+
+  if (isOverRateLimit(address, currency, requestTime)) {
+    return status(429).json({ limitEnd: rateLimiter[currency][address] })
   }
 
   try {
-    await fundAccount(address)
+    const fundedAmount = await fundAccount(address, currency)
+    const newLimit = new Date(requestTime.valueOf() + RATE_LIMIT_IN_MS)
+
+    if (rateLimiter[currency]) {
+      rateLimiter[currency][address] = newLimit
+    } else {
+      rateLimiter[currency] = {
+        [address]: newLimit
+      }
+    }
+
+    return status(200).send({ fundedAmount })
   } catch (e) {
     return status(400).send({ e })
   }
-
-  rateLimiter[address] = new Date(requestTime.valueOf() + limit)
-  return status(200).send({ fundedAmount: FUNDABLE_AMOUNT })
 }
 
-function isOverRateLimit(address: string, currentTime: Date): boolean {
+function isOverRateLimit(
+  address: string,
+  currency: string,
+  currentTime: Date
+): boolean {
   return (
-    rateLimiter[address] &&
-    currentTime.valueOf() - rateLimiter[address].valueOf() < 0
+    rateLimiter[currency] &&
+    rateLimiter[currency][address] &&
+    currentTime.valueOf() - rateLimiter[currency][address].valueOf() < 0
   )
 }

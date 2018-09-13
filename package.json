@@ -1,12 +1,13 @@
 {
   "name": "testnet-faucet",
   "version": "1.0.0",
-  "description": "Faucet to recieve tesnet funds for Kinesis currencies",
+  "description": "Faucet to receive testnet funds for Kinesis currencies",
   "main": "build/index.js",
   "scripts": {
     "build:client": "parcel build src/client/index.html",
     "build:server": "tsc",
     "build": "concurrently \"npm:build:*\"",
+    "dev": "npm start && npm run watch",
     "watch:server": "tsc --watch",
     "watch:client": "parcel watch src/client/index.html",
     "watch": "concurrently \"npm:watch:*\"",
@@ -30,6 +31,7 @@
     "@types/react": "^16.4.8",
     "@types/react-dom": "^16.0.7",
     "@types/server": "^1.0.0",
+    "babel-polyfill": "^6.26.0",
     "concurrently": "^3.6.1",
     "parcel": "^1.9.7",
     "pm2": "^3.0.3",

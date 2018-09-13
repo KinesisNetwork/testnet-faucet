@@ -7,38 +7,89 @@ import {
   Network
 } from 'js-kinesis-sdk'
 
-const FUNDING_ACCOUNT_KEYPAIR = Keypair.fromSecret(
+import { Currency } from './index'
+
+interface Connection {
+  horizonURL: string
+  networkPassphrase: string
+}
+
+const fundingKeypair = Keypair.fromSecret(
   process.env.FUNDING_ACCOUNT_SECRET ||
-    'SAR4YMRBHLU7P7UNPEAOQGSS5P3G4PNALDE3CNOCFNLJC2PA6TS3K44H'
+    'SDWJ4EDVBAKKLP5NADFEQLPSSXRQ4PZPTIPBS4FNCIAPP4AOO4S4OPWN'
 )
-export const FUNDABLE_AMOUNT = Number(process.env.FUNDABLE_AMOUNT) || 30 // lumens
-const AMOUNT_TO_STROOPS_FEE = 10e2 * 45 // 0.45% * 10e7
+const STROOPS_IN_ONE_KINESIS = 1e7
+const amountToFund = Number(process.env.FUNDABLE_AMOUNT) || 5 // lumens
 
-Network.use(new Network('Kinesis UAT'))
+const CONNECTIONS: { [key in Currency]: Connection } = {
+  KAU: {
+    networkPassphrase: 'Kinesis UAT',
+    horizonURL: 'https://kau-testnet.kinesisgroup.io'
+  },
+  KAG: {
+    networkPassphrase: 'Kinesis KAG UAT',
+    horizonURL: 'https://kag-testnet.kinesisgroup.io'
+  }
+}
 
-export default async function fundAccount(destination: string) {
-  const server = new Server('https://kau-testnet.kinesisgroup.io')
+export default async function fundAccount(
+  destination: string,
+  currency: Currency
+) {
+  const connection = CONNECTIONS[currency]
+  await Network.use(new Network(connection.networkPassphrase))
+
+  const server = new Server(connection.horizonURL)
+
   const accountExists = await server
     .loadAccount(destination)
     .then(_exists => true, _error => false)
+
   const operation = accountExists
     ? Operation.payment({
         destination,
         asset: Asset.native(),
-        amount: String(FUNDABLE_AMOUNT)
+        amount: String(amountToFund)
       })
     : Operation.createAccount({
-        destination: destination,
-        startingBalance: String(FUNDABLE_AMOUNT)
+        destination,
+        startingBalance: String(amountToFund)
       })
-  const fundingAccount = await server.loadAccount(
-    FUNDING_ACCOUNT_KEYPAIR.publicKey()
-  )
+
+  const fee = await getFeeInStroops(server, amountToFund)
+
+  const fundingAccount = await server.loadAccount(fundingKeypair.publicKey())
   const transaction = new TransactionBuilder(fundingAccount, {
-    fee: String(FUNDABLE_AMOUNT * AMOUNT_TO_STROOPS_FEE + 100)
+    fee: String(fee)
   })
     .addOperation(operation)
     .build()
-  transaction.sign(FUNDING_ACCOUNT_KEYPAIR)
+
+  transaction.sign(fundingKeypair)
+
   await server.submitTransaction(transaction)
+
+  return amountToFund
+}
+
+async function getFeeInStroops(server: Server, amountInKinesis: number) {
+  const {
+    records: [mostRecentLedger]
+  } = await server
+    .ledgers()
+    .order('desc')
+    .limit(1)
+    .call()
+  const {
+    base_percentage_fee: basePercentageFee,
+    base_fee_in_stroops: baseFeeInStroops
+  } = mostRecentLedger
+
+  const basisPointsToPercent = 10000
+
+  const percentageFee =
+    ((Number(amountInKinesis) * basePercentageFee) / basisPointsToPercent) *
+    STROOPS_IN_ONE_KINESIS
+
+  return String(Math.ceil(percentageFee + baseFeeInStroops))
 }
